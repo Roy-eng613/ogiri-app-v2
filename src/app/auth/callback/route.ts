@@ -10,6 +10,10 @@ import type { Database } from "@/types/database";
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const trueOrigin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : origin;
+
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
@@ -56,7 +60,7 @@ export async function GET(request: Request) {
       // HTTP 302リダイレクトだとPCブラウザのトラッキング防止機能により
       // Set-Cookie が破棄されるケースがあるため、HTTP 200でHTMLを返し、
       // クライアント側（meta refresh）でリダイレクトさせる
-      const redirectUrl = `${origin}${next}`;
+      const redirectUrl = `${trueOrigin}${next}`;
       return new NextResponse(
         `<html>
           <head><meta http-equiv="refresh" content="0;url=${redirectUrl}"></head>
@@ -72,5 +76,5 @@ export async function GET(request: Request) {
 
   // エラー時はトップページにリダイレクト
   console.error("[auth/callback] OAuth exchange failed");
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  return NextResponse.redirect(`${trueOrigin}/?auth_error=1`);
 }
