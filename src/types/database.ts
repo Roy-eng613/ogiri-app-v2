@@ -142,7 +142,7 @@ export type Database = {
           created_at: string;
           expires_at: string | null;
           total_likes: number;
-          bokesCount: number;
+          bokes_count: number;
         };
         Relationships: [];
       };
@@ -193,7 +193,7 @@ export type Database = {
           p_author_name: string;
           p_user_id: string | null;
         };
-        Returns: any;
+        Returns: unknown;
       };
     };
     Enums: {
