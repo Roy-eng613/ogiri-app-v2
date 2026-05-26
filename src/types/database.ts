@@ -132,6 +132,20 @@ export type Database = {
         };
         Relationships: [];
       };
+      topics_with_stats: {
+        Row: {
+          id: string;
+          content: string;
+          is_ai: boolean;
+          ai_model: string | null;
+          is_active: boolean;
+          created_at: string;
+          expires_at: string | null;
+          total_likes: number;
+          bokesCount: number;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       toggle_like: {
@@ -164,6 +178,22 @@ export type Database = {
           topic_id: string;
           token_balance: number;
         };
+      };
+      insert_topic_as_admin: {
+        Args: {
+          p_content: string;
+          p_ai_model: string;
+        };
+        Returns: string;
+      };
+      post_boke_with_reward: {
+        Args: {
+          p_topic_id: string;
+          p_content: string;
+          p_author_name: string;
+          p_user_id: string | null;
+        };
+        Returns: any;
       };
     };
     Enums: {
