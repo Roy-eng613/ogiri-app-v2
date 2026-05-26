@@ -97,6 +97,7 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
   // モーダルステート
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
   const [isLoginForTopicModalOpen, setIsLoginForTopicModalOpen] = useState(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [newTopicContent, setNewTopicContent] = useState("");
   const [isAiTopic, setIsAiTopic] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -246,9 +247,20 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
           <>
             {/* アクションエリア */}
             <div className="flex items-center justify-between flex-wrap gap-4 bg-black/20 p-4 md:p-6 rounded-2xl border border-[var(--border-subtle)]">
-              <div>
+              <div className="flex-1 min-w-[280px]">
                 <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>お題一覧</h2>
-                <p className="text-sm text-gray-400">好きなお題を選んで、ボケを投稿しよう</p>
+                <p className="text-sm text-gray-400 mb-3">好きなお題を選んで、ボケを投稿しよう！</p>
+                <div className="text-xs text-gray-400 bg-white/5 p-3 rounded-xl border border-white/10">
+                  <p className="font-bold text-gray-300 mb-1">💡 遊べば遊ぶほどトークン（🎋）が貯まる！</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-1 mb-2">
+                    <li>ボケると <strong className="text-green-400">+1</strong></li>
+                    <li>毎日ログインで <strong className="text-green-400">+5</strong></li>
+                    <li>お題が殿堂入り(24h)で上位5名に最大 <strong className="text-green-400">+5</strong></li>
+                  </ul>
+                  <button onClick={() => setIsRulesModalOpen(true)} className="text-[var(--accent-gold)] hover:underline flex items-center gap-1 font-bold">
+                    <span>📖 詳しい遊び方・ルールを見る</span>
+                  </button>
+                </div>
               </div>
               <button
                 onClick={() => {
@@ -258,7 +270,7 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
                     setIsCreateTopicModalOpen(true);
                   }
                 }}
-                className="post-btn"
+                className="post-btn whitespace-nowrap self-end md:self-center"
                 style={{ background: "linear-gradient(135deg, rgba(201,160,74,0.9), rgba(184,134,11,0.9))", color: "#000" }}
               >
                 ✏️ 新しいお題を作る (8トークン)
@@ -441,6 +453,58 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
                 style={{ padding: "0.5rem", borderRadius: "0.75rem", fontSize: "0.875rem", color: "var(--text-muted)", border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.05)", cursor: "pointer" }}
               >
                 キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 遊び方・ルールモーダル */}
+      {isRulesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0, 0, 0, 0.7)", backdropFilter: "blur(4px)" }} onClick={() => setIsRulesModalOpen(false)}>
+          <div className="glass-card max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>📖 遊び方とルール</h3>
+              <button onClick={() => setIsRulesModalOpen(false)} className="text-gray-400 hover:text-white">✕</button>
+            </div>
+            
+            <div className="space-y-6 text-sm" style={{ color: "var(--text-secondary)" }}>
+              <div>
+                <h4 className="font-bold text-base mb-2 text-white">1. 基本的な遊び方</h4>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong className="text-gray-200">ボケる（回答する）:</strong> ログイン不要で、誰でも匿名でボケを投稿できます。</li>
+                  <li><strong className="text-gray-200">座布団をあげる:</strong> 面白いと思ったボケには、誰でも「座布団（いいね）」をあげることができます。</li>
+                  <li><strong className="text-gray-200">お題を作る:</strong> X（Twitter）でログインすると、専用の「トークン（🎋）」を消費して自分でお題を作ることができます。（消費: 8 トークン）</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-base mb-2 text-white">2. トークン（🎋）の集め方</h4>
+                <p className="mb-2 text-gray-400">お題を作るためのトークンは、遊べば遊ぶほど自然に貯まる仕組みです。</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong className="text-green-400">ボケ投稿ボーナス:</strong> ボケを1回投稿するたびに <span className="text-white">1 トークン</span> 回復します。</li>
+                  <li><strong className="text-green-400">ログインボーナス:</strong> 1日1回、サイトにログインした時に <span className="text-white">5 トークン</span> プレゼントされます。</li>
+                  <li><strong className="text-green-400">お題のランキング報酬:</strong> お題が作られてから24時間経つと「殿堂入り」となります。その時点で座布団の数が多かった上位5名には、順位に応じてトークン（1位:5 / 2位:4 / 3位:3 / 4位:2 / 5位:1）がプレゼントされます！</li>
+                  <li><strong className="text-green-400">深夜の自動回復:</strong> 毎日深夜0時の時点でトークンが5未満の場合は、翌朝遊べるように自動的に <span className="text-white">5 トークン</span> まで回復します。</li>
+                </ul>
+                <p className="mt-2 text-xs text-gray-500">※各種ボーナスや報酬を受け取るには、ログインした状態で遊ぶ必要があります</p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-base mb-2 text-white">3. その他の仕様</h4>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong className="text-yellow-400">AIからの出題:</strong> 時々、システム（AI）から特別なお題がゲリラ的に出題されることがあります。</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="mt-8">
+              <button
+                onClick={() => setIsRulesModalOpen(false)}
+                className="w-full py-3 rounded-xl font-bold text-black"
+                style={{ background: "linear-gradient(135deg, rgba(201,160,74,0.9), rgba(184,134,11,0.9))" }}
+              >
+                閉じる
               </button>
             </div>
           </div>
