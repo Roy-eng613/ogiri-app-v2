@@ -98,7 +98,15 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
   const [isCreateTopicModalOpen, setIsCreateTopicModalOpen] = useState(false);
   const [isLoginForTopicModalOpen, setIsLoginForTopicModalOpen] = useState(false);
   const [newTopicContent, setNewTopicContent] = useState("");
+  const [isAiTopic, setIsAiTopic] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // 管理者判定 (NEXT_PUBLIC_ADMIN_HANDLESに合致するか、表示名に「ホルモン」が含まれるか)
+  const adminHandles = (process.env.NEXT_PUBLIC_ADMIN_HANDLES || "horumon").split(",").map(h => h.trim());
+  const isAdmin = userProfile && (
+    (userProfile.x_handle && adminHandles.includes(userProfile.x_handle)) ||
+    (userProfile.display_name && userProfile.display_name.includes("ホルモン"))
+  );
 
   // タブステート
   const [activeTab, setActiveTab] = useState<"topics" | "likes">("topics");
@@ -161,10 +169,11 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
   const handleCreateTopic = async () => {
     if (!newTopicContent.trim() || isPending) return;
     startTransition(async () => {
-      const res = await postNewTopic(newTopicContent.trim());
+      const res = await postNewTopic(newTopicContent.trim(), isAiTopic);
       if (res.success) {
         setIsCreateTopicModalOpen(false);
         setNewTopicContent("");
+        setIsAiTopic(false);
         if (authUser) await fetchUserProfile(authUser.id);
         router.push(`/topic/${res.topic_id}`);
       } else {
@@ -279,11 +288,11 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
             {/* 過去のお題 */}
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <span className="tag-badge" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}>📚 過去のお題</span>
+                <span className="tag-badge" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}>📚 殿堂入りのお題 (これまでの出題)</span>
               </div>
               
               {pastTopics.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">過去のお題はありません。</p>
+                <p className="text-center text-gray-500 py-8">殿堂入りのお題はありません。</p>
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {pastTopics.map(topic => (
@@ -355,7 +364,7 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
             <h3 className="text-lg font-bold mb-2">新しいお題を作る</h3>
             <p className="text-xs text-gray-400 mb-4">保有トークンを8消費して、新しいお題を投稿します。（現在のトークン: {userProfile?.token_balance ?? 0}）</p>
             
-            {(userProfile?.token_balance ?? 0) < 8 ? (
+            {(userProfile?.token_balance ?? 0) < 8 && !(isAdmin && isAiTopic) ? (
               <div className="bg-red-900/30 border border-red-500/30 text-red-400 p-3 rounded-lg text-sm mb-4">
                 トークンが不足しています。ボケを投稿して座布団を集めるか、明日またログインしてボーナスを受け取ってください。
               </div>
@@ -370,15 +379,29 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
               />
             )}
             
+            {isAdmin && (
+              <div className="mb-4 flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="is_ai_topic" 
+                  checked={isAiTopic} 
+                  onChange={e => setIsAiTopic(e.target.checked)} 
+                />
+                <label htmlFor="is_ai_topic" className="text-sm text-blue-400 font-bold cursor-pointer">
+                  🤖 管理者権限：AIからの出題として投稿する（トークン消費0）
+                </label>
+              </div>
+            )}
+            
             <div className="flex gap-3">
               <button onClick={() => setIsCreateTopicModalOpen(false)} className="flex-1 py-2 rounded-xl text-sm border border-gray-600 hover:bg-gray-800 transition-colors">キャンセル</button>
               <button 
                 onClick={handleCreateTopic} 
-                disabled={(userProfile?.token_balance ?? 0) < 8 || !newTopicContent.trim() || isPending}
+                disabled={((userProfile?.token_balance ?? 0) < 8 && !(isAdmin && isAiTopic)) || !newTopicContent.trim() || isPending}
                 className="flex-1 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: "linear-gradient(135deg, rgba(201,160,74,0.9), rgba(184,134,11,0.9))", color: "#000" }}
               >
-                {isPending ? "作成中..." : "作成する (-8 🎋)"}
+                {isPending ? "作成中..." : (isAiTopic && isAdmin ? "AI出題を作成 (0 🎋)" : "作成する (-8 🎋)")}
               </button>
             </div>
           </div>

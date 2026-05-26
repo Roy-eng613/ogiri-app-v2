@@ -15,12 +15,12 @@ export default async function TopPage() {
     .gte("created_at", twentyFourHoursAgo)
     .order("created_at", { ascending: false });
 
-  // 過去のお題 (24時間以上前)
+  // 過去のお題 (24時間以上前) - 殿堂入り
   const { data: pastTopicsData, error: pastError } = await supabase
-    .from("topics")
-    .select("*, bokes(count)")
+    .from("topics_with_stats")
+    .select("*")
     .lt("created_at", twentyFourHoursAgo)
-    .order("created_at", { ascending: false })
+    .order("total_likes", { ascending: false })
     .limit(20);
 
   if (activeError || pastError) {
@@ -39,7 +39,7 @@ export default async function TopPage() {
   const formatTopics = (topics: any[]) => {
     return (topics || []).map(t => ({
       ...t,
-      bokesCount: t.bokes && t.bokes.length > 0 ? t.bokes[0].count : 0
+      bokesCount: t.bokes_count !== undefined ? Number(t.bokes_count) : (t.bokes && t.bokes.length > 0 ? t.bokes[0].count : 0)
     }));
   };
 

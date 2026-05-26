@@ -68,7 +68,8 @@ export async function toggleLike(
 // ─── 新しいお題を投稿する (8トークン消費) ─────────────────────────
 
 export async function postNewTopic(
-  content: string
+  content: string,
+  is_ai: boolean = false
 ): Promise<{ success: boolean; topic_id?: string; token_balance?: number; error?: string }> {
   const supabase = await createClient();
 
@@ -77,6 +78,34 @@ export async function postNewTopic(
     return { success: false, error: "not_logged_in" };
   }
 
+  if (is_ai) {
+    const adminHandles = (process.env.NEXT_PUBLIC_ADMIN_HANDLES || "horumon").split(",").map(h => h.trim());
+    const { data: userProfile } = await supabase.from("users").select("x_handle, display_name").eq("id", user.id).single();
+    
+    const isHandleAdmin = userProfile?.x_handle && adminHandles.includes(userProfile.x_handle);
+    const isNameAdmin = userProfile?.display_name && userProfile.display_name.includes("ホルモン");
+    
+    if (isHandleAdmin || isNameAdmin) {
+      // 管理者によるAI出題（トークン消費なし）
+      const { data, error } = await supabase.from("topics").insert({
+        content,
+        is_ai: true,
+        ai_model: "AIからの出題",
+        is_active: true
+      }).select().single();
+
+      if (error) {
+        console.error("[postNewTopic Admin] error:", error.message);
+        return { success: false, error: error.message };
+      }
+      revalidatePath("/");
+      return { success: true, topic_id: data.id };
+    } else {
+      return { success: false, error: "unauthorized_admin" };
+    }
+  }
+
+  // 通常のユーザーによるお題作成（8トークン消費）
   const { data, error } = await supabase.rpc("create_topic_with_tokens", {
     p_user_id: user.id,
     p_content: content,

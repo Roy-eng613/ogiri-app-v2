@@ -33,12 +33,12 @@ function useCountdown(expiresAt: string | null) {
     if (!expiresAt) { setRemaining("∞"); return; }
     const update = () => {
       const diff = new Date(expiresAt).getTime() - Date.now();
-      if (diff <= 0) { setRemaining("終了"); return; }
+      if (diff <= 0) { setRemaining("殿堂入り"); return; }
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setRemaining(
-        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+        `あと ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
       );
     };
     update();
@@ -355,7 +355,7 @@ function TopicCard({ topic, bokeCount }: { topic: Topic; bokeCount: number }) {
 
         <div className="flex items-center gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
           <span>💬 回答 <strong style={{ color: "var(--text-secondary)" }}>{bokeCount}件</strong></span>
-          <span>⏰ 残り <strong style={{ color: remaining === "終了" ? "var(--accent-red)" : "var(--accent-gold)" }}>{remaining}</strong></span>
+          <span>⏰ 報酬判定まで <strong style={{ color: remaining === "殿堂入り" ? "var(--text-muted)" : "var(--accent-gold)" }}>{remaining}</strong></span>
         </div>
       </div>
     </section>
