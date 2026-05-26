@@ -16,16 +16,12 @@ export async function postBoke(
   // ログインユーザーの取得
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
-    .from("bokes")
-    .insert({ 
-      topic_id: topicId, 
-      content, 
-      author_name: authorName,
-      user_id: user?.id ?? null
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc("post_boke_with_reward", {
+    p_topic_id: topicId,
+    p_content: content,
+    p_author_name: authorName,
+    p_user_id: user?.id ?? null
+  });
 
   if (error) {
     console.error("[postBoke] error:", error.message);
@@ -83,20 +79,18 @@ export async function postNewTopic(
     const isAdmin = adminUids.includes(user.id);
     
     if (isAdmin) {
-      // 管理者によるAI出題（トークン消費なし）
-      const { data, error } = await supabase.from("topics").insert({
-        content,
-        is_ai: true,
-        ai_model: "AIからの出題",
-        is_active: true
-      }).select().single();
+      // 管理者によるAI出題（トークン消費なし、RLSバイパス）
+      const { data: topicId, error } = await supabase.rpc("insert_topic_as_admin", {
+        p_content: content,
+        p_ai_model: "AIからの出題"
+      });
 
       if (error) {
         console.error("[postNewTopic Admin] error:", error.message);
         return { success: false, error: error.message };
       }
       revalidatePath("/");
-      return { success: true, topic_id: data.id };
+      return { success: true, topic_id: topicId };
     } else {
       return { success: false, error: "unauthorized_admin" };
     }
