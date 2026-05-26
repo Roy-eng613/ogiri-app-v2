@@ -29,7 +29,7 @@ export async function postBoke(
   }
 
   revalidatePath("/");
-  return { data: { ...data, liked: false, isNew: true }, error: null };
+  return { data: { ...(data as any), liked: false, isNew: true }, error: null };
 }
 
 // ─── 座布団（いいね）をトグルする ─────────────────────────────
