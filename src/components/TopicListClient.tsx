@@ -115,6 +115,13 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
     }
   }, [initialLikedBokes]);
 
+  // 管理者の場合はデフォルトでAI出題チェックをONにする
+  useEffect(() => {
+    if (isAdmin) {
+      setIsAiTopic(true);
+    }
+  }, [isAdmin]);
+
   // ユーザープロファイル取得
   const fetchUserProfile = async (uid: string) => {
     const { data } = await supabase.from("users").select("*").eq("id", uid).maybeSingle();
@@ -361,7 +368,8 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
             <h3 className="text-lg font-bold mb-2">新しいお題を作る</h3>
             <p className="text-xs text-gray-400 mb-4">保有トークンを8消費して、新しいお題を投稿します。（現在のトークン: {userProfile?.token_balance ?? 0}）</p>
             
-            {(userProfile?.token_balance ?? 0) < 8 && !(isAdmin && isAiTopic) ? (
+            {/* 管理者の場合は無条件でテキストエリアを表示 */}
+            {((userProfile?.token_balance ?? 0) < 8 && !isAdmin) ? (
               <div className="bg-red-900/30 border border-red-500/30 text-red-400 p-3 rounded-lg text-sm mb-4">
                 トークンが不足しています。ボケを投稿して座布団を集めるか、明日またログインしてボーナスを受け取ってください。
               </div>
