@@ -79,13 +79,10 @@ export async function postNewTopic(
   }
 
   if (is_ai) {
-    const adminHandles = (process.env.NEXT_PUBLIC_ADMIN_HANDLES || "horumon").split(",").map(h => h.trim());
-    const { data: userProfile } = await supabase.from("users").select("x_handle, display_name").eq("id", user.id).single();
+    const adminUids = (process.env.NEXT_PUBLIC_ADMIN_UIDS || "c5a79b44-1cea-4b77-a9dc-d98ed49e4260").split(",").map(id => id.trim());
+    const isAdmin = adminUids.includes(user.id);
     
-    const isHandleAdmin = userProfile?.x_handle && adminHandles.includes(userProfile.x_handle);
-    const isNameAdmin = userProfile?.display_name && userProfile.display_name.includes("ホルモン");
-    
-    if (isHandleAdmin || isNameAdmin) {
+    if (isAdmin) {
       // 管理者によるAI出題（トークン消費なし）
       const { data, error } = await supabase.from("topics").insert({
         content,

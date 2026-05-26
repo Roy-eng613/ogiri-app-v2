@@ -101,12 +101,9 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
   const [isAiTopic, setIsAiTopic] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // 管理者判定 (NEXT_PUBLIC_ADMIN_HANDLESに合致するか、表示名に「ホルモン」が含まれるか)
-  const adminHandles = (process.env.NEXT_PUBLIC_ADMIN_HANDLES || "horumon").split(",").map(h => h.trim());
-  const isAdmin = userProfile && (
-    (userProfile.x_handle && adminHandles.includes(userProfile.x_handle)) ||
-    (userProfile.display_name && userProfile.display_name.includes("ホルモン"))
-  );
+  // 管理者判定 (NEXT_PUBLIC_ADMIN_UIDSに合致するかどうか)
+  const adminUids = (process.env.NEXT_PUBLIC_ADMIN_UIDS || "c5a79b44-1cea-4b77-a9dc-d98ed49e4260").split(",").map(id => id.trim());
+  const isAdmin = userProfile && adminUids.includes(userProfile.id);
 
   // タブステート
   const [activeTab, setActiveTab] = useState<"topics" | "likes">("topics");
