@@ -112,6 +112,7 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
 
   useEffect(() => {
     if (initialLikedBokes) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setLikedPosts(initialLikedBokes);
     }
   }, [initialLikedBokes]);
@@ -119,6 +120,7 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
   // 管理者の場合はデフォルトでAI出題チェックをONにする
   useEffect(() => {
     if (isAdmin) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setIsAiTopic(true);
     }
   }, [isAdmin]);
@@ -211,13 +213,13 @@ export default function TopicListClient({ activeTopics, pastTopics, initialAuthU
       {/* ヘッダー */}
       <header className="site-header">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⛩️</span>
+          <Link href="/" className="flex items-center gap-3 hover:opacity-85 transition-opacity cursor-pointer group">
+            <span className="text-2xl group-hover:scale-105 transition-transform">⛩️</span>
             <div>
-              <p className="text-sm font-bold tracking-wide" style={{ color: "var(--accent-gold)", fontFamily: "var(--font-noto-serif-jp)" }}>大喜利が世界を救う</p>
+              <p className="text-sm font-bold tracking-wide group-hover:text-[var(--accent-gold-light)] transition-colors" style={{ color: "var(--accent-gold)", fontFamily: "var(--font-noto-serif-jp)" }}>大喜利が世界を救う</p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>AI大喜利SNS · β版</p>
             </div>
-          </div>
+          </Link>
           <LoginButton authUser={authUser} userProfile={userProfile} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
       </header>
