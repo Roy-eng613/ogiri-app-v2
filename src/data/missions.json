@@ -1,0 +1,46 @@
+{
+  "missions": [
+    {
+      "id": "reading_current",
+      "title": "📖 READ: 円城塔『エピローグ』",
+      "progress": 3,
+      "color": "#fcee0a"
+    },
+    {
+      "id": "reading_next",
+      "title": "📚 NEXT: 長谷敏司『プロトコル・オブ・ヒューマニティ』",
+      "progress": 0,
+      "color": "#888888"
+    },
+    {
+      "id": "english",
+      "title": "🇬🇧 ENG: VOICEVOX翻訳・TOEIC語彙同期",
+      "progress": 40,
+      "color": "#00f0ff"
+    },
+    {
+      "id": "cpu",
+      "title": "⚡ CPU: コンピュータアーキテクチャ調査",
+      "progress": 25,
+      "color": "#ff0055"
+    },
+    {
+      "id": "game_tsushima",
+      "title": "🎮 GMS: ゴースト・オブ・ツシマ",
+      "progress": 20,
+      "color": "#eab308"
+    },
+    {
+      "id": "game_p5",
+      "title": "🎮 GMS: ペルソナ5",
+      "progress": 30,
+      "color": "#ef4444"
+    },
+    {
+      "id": "game_ow",
+      "title": "🎮 GMS: Overwatch (ALWAYS RUNNING)",
+      "progress": 100,
+      "color": "#f97316"
+    }
+  ]
+}

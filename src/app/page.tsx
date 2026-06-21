@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import missionsData from "@/data/missions.json";
 
 // ─── 定数とリンクデータ ──────────────────────────────────────────
 const LINKS = [
@@ -17,6 +18,7 @@ const LINKS = [
     tag: "SYS_LAUNCH",
     icon: "⛩️",
     external: false,
+    disabled: false,
   },
   {
     id: "note",
@@ -27,7 +29,9 @@ const LINKS = [
     color: "#00f0ff", // Cyberpunk Cyan
     glowColor: "rgba(0, 240, 255, 0.4)",
     tag: "TXT_NODE",
+    icon: "📝",
     external: true,
+    disabled: false,
   },
   {
     id: "hatena",
@@ -38,7 +42,9 @@ const LINKS = [
     color: "#ff0055", // Cyberpunk Pink/Red
     glowColor: "rgba(255, 0, 85, 0.4)",
     tag: "LOG_DB",
+    icon: "📚",
     external: true,
+    disabled: false,
   },
   {
     id: "x",
@@ -49,7 +55,9 @@ const LINKS = [
     color: "#38bdf8", // X blue
     glowColor: "rgba(56, 189, 248, 0.4)",
     tag: "COM_TRANS",
+    icon: "🐦",
     external: true,
+    disabled: false,
   },
   {
     id: "youtube",
@@ -60,7 +68,22 @@ const LINKS = [
     color: "#ef4444", // YouTube Red
     glowColor: "rgba(239, 68, 68, 0.4)",
     tag: "VID_CELL",
+    icon: "📺",
     external: true,
+    disabled: false,
+  },
+  {
+    id: "cpusim",
+    name: "🛠️ PROTOCOL: CPU_SIM_v0.1",
+    path: "#",
+    status: "PREPARING",
+    description: "4-bit CPU動作ビジュアライザ・アセンブリ学習シミュレータ。現在コアマトリックス構築中（システム設計フェーズ）。",
+    color: "#a855f7", // Cyberpunk Purple
+    glowColor: "rgba(168, 85, 247, 0.4)",
+    tag: "SIM_OFFLINE",
+    icon: "🛠️",
+    external: false,
+    disabled: true,
   },
 ];
 
@@ -197,11 +220,33 @@ export default function CyberpunkPortal() {
   const [isDiving, setIsDiving] = useState(false);
   const [diveProgress, setDiveProgress] = useState(0);
 
+  // 拡張機能：MissionsおよびRSSフィード
+  const [feedItems, setFeedItems] = useState<any[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
+
   // 音声 hum 制御用の Ref
   const humOsc1Ref = useRef<OscillatorNode | null>(null);
   const humOsc2Ref = useRef<OscillatorNode | null>(null);
   const humGainRef = useRef<GainNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // ─── RSSフィードの取得 ─────────────────────────────────────────
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      try {
+        const res = await fetch("/api/feeds");
+        const data = await res.json();
+        if (data.success && data.feeds) {
+          setFeedItems(data.feeds);
+        }
+      } catch (e) {
+        console.error("Failed to fetch RSS feeds:", e);
+      } finally {
+        setFeedLoading(false);
+      }
+    };
+    fetchFeeds();
+  }, []);
 
   // ─── アンビエントHum音の開始/停止 ──────────────────────────────
   const startHum = () => {
@@ -588,7 +633,7 @@ export default function CyberpunkPortal() {
             <span className="animate-pulse text-xs">●</span> SYSTEM OVERRIDE // NEURAL LINK
           </h1>
           <p className="text-[10px] text-white/40 tracking-wider mt-0.5">
-            DISPERSAL PORTAL PROTOCOL v2.5.0
+            DISPERSAL PORTAL PROTOCOL v2.6.0
           </p>
         </div>
 
@@ -621,29 +666,51 @@ export default function CyberpunkPortal() {
       {/* ─── メインレイアウト ─── */}
       <main className="relative z-10 w-full max-w-7xl mx-auto px-6 py-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         
-        {/* 左側：システムターミナル（シェル入力機能付き） */}
+        {/* 左側：システムターミナル（シェル入力 / ミッション切り替えタブ） */}
+        {/* 左側：システムターミナル（ミッションログ＆診断パネル上下配置） */}
         <section className="lg:col-span-4 flex flex-col gap-6 self-stretch justify-center h-full max-lg:order-2">
-          <div className="relative border border-white/10 bg-[#0d0d11]/85 backdrop-blur-md p-5 rounded-sm flex flex-col justify-between flex-1 min-h-[320px] overflow-hidden"
+          <div className="relative border border-white/10 bg-[#0d0d11]/85 backdrop-blur-md p-5 rounded-sm flex flex-col justify-between flex-1 min-h-[460px] overflow-hidden"
                style={{ clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)" }}>
             
             {/* 角のハイライト */}
             <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2" style={{ borderColor: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }} />
             <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2" style={{ borderColor: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }} />
 
-            <div>
-              <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 text-[10px] text-white/50 uppercase tracking-widest">
-                <span>[ SHELL MONITOR ]</span>
-                <span className="font-bold" style={{ color: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }}>SECURE_LINK</span>
+            <div className="flex flex-col gap-5">
+              {/* 上部：MISSION LOG */}
+              <div>
+                <div className="border-b border-white/10 pb-1.5 mb-3 text-[10px] tracking-wider font-bold text-[#fcee0a]">
+                  [ MISSION LOG ]
+                </div>
+                <div className="flex flex-col gap-3">
+                  {missionsData.missions.map((mission: any) => (
+                    <div key={mission.id}>
+                      <div className="flex justify-between text-[9px] mb-1 font-mono">
+                        <span className="text-white/80 truncate mr-2">{mission.title}</span>
+                        <span style={{ color: mission.color }} className="font-bold">{mission.progress}%</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className="h-full" style={{ width: `${mission.progress}%`, backgroundColor: mission.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* ログビュー */}
-              <div className="flex flex-col gap-2 min-h-[140px]">
-                {logs.map((log, idx) => (
-                  <div key={idx} className="text-[10px] tracking-wider leading-relaxed text-white/85 font-mono">
-                    <span className="mr-2" style={{ color: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }}>&gt;</span>
-                    {log}
-                  </div>
-                ))}
+              {/* 中部：DIAGNOSTICS & SYSTEM LOG */}
+              <div>
+                <div className="border-b border-white/10 pb-1.5 mb-3 text-[10px] tracking-wider font-bold text-[#00f0ff]"
+                     style={{ borderColor: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff", color: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }}>
+                  [ SYSTEM DIAGNOSTICS ]
+                </div>
+                <div className="flex flex-col gap-1.5 min-h-[90px] max-h-[120px] overflow-y-auto">
+                  {logs.map((log, idx) => (
+                    <div key={idx} className="text-[9px] tracking-wider leading-relaxed text-white/85 font-mono">
+                      <span className="mr-1.5" style={{ color: canvasTheme === "matrix" ? "#00ff66" : "#00f0ff" }}>&gt;</span>
+                      {log}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -745,7 +812,22 @@ export default function CyberpunkPortal() {
                 </div>
               );
 
-              if (link.external) {
+              if (link.disabled) {
+                return (
+                  <div
+                    key={link.id}
+                    onClick={() => playSynthSound("glitch", muted)}
+                    onMouseEnter={() => {
+                      setHoveredLink(link);
+                      playSynthSound("hover", muted);
+                    }}
+                    onMouseLeave={() => setHoveredLink(null)}
+                    className="block"
+                  >
+                    {content}
+                  </div>
+                );
+              } else if (link.external) {
                 return (
                   <a href={link.path} key={link.id} target="_blank" rel="noopener noreferrer" onClick={() => playSynthSound("click", muted)} className="block no-underline">
                     {content}
@@ -761,7 +843,7 @@ export default function CyberpunkPortal() {
             })}
           </div>
 
-          {/* ホバー中ノードの詳細ディスプレイ */}
+          {/* ホバー中ノードの詳細ディスプレイ 兼 RSS新着フィードボード */}
           <div className="relative border bg-[#0d0d11]/85 backdrop-blur-md p-6 rounded-sm min-h-[300px] flex flex-col justify-between transition-colors duration-300 overflow-hidden"
                style={{
                  borderColor: hoveredLink ? hoveredLink.color : "rgba(255, 255, 255, 0.1)",
@@ -774,17 +856,14 @@ export default function CyberpunkPortal() {
               {hoveredLink ? hoveredLink.icon : "⛩️"}
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 text-[10px] text-white/50 tracking-wider">
-                <span>[ TERMINAL CORE DISP ]</span>
-                {hoveredLink ? (
+            {hoveredLink ? (
+              /* ① ホバー状態：ノードの詳細を表示 */
+              <div>
+                <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 text-[10px] text-white/50 tracking-wider">
+                  <span>[ TERMINAL CORE DISP ]</span>
                   <span style={{ color: hoveredLink.color }}>CONNECTED</span>
-                ) : (
-                  <span>STANDBY</span>
-                )}
-              </div>
+                </div>
 
-              {hoveredLink ? (
                 <div className="flex flex-col gap-4 animate-fade-in-up">
                   <h3 className="text-base font-black tracking-widest font-mono" style={{ color: hoveredLink.color }}>
                     {hoveredLink.name.replace(/^[^\s]+\s/, "")}
@@ -806,22 +885,139 @@ export default function CyberpunkPortal() {
                     {hoveredLink.description}
                   </p>
                 </div>
-              ) : (
-                <div className="flex flex-col justify-center items-center text-center py-10 text-white/50">
-                  <span className="text-3xl mb-4 animate-pulse">⛩️</span>
-                  <p className="text-xs tracking-widest uppercase font-bold text-white/80">CONNECTION STABLE</p>
-                  <p className="text-[10px] mt-2 max-w-[240px] leading-relaxed text-white/70">
-                    ノードを選択してください。暗号接続が自動で確立され、詳細データが表示されます。
-                  </p>
+              </div>
+            ) : (
+              /* ② スタンバイ状態：RSSフィードを流し込む */
+              <div className="flex flex-col h-full justify-between animate-fade-in-up">
+                <div>
+                  <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 text-[10px] text-white/50 tracking-wider">
+                    <span>[ SECURE DATAFEED: GLOBAL STREAM ]</span>
+                    <span className="text-[#00f0ff] font-mono animate-pulse">● LIVE_FEED</span>
+                  </div>
+                  
+                  {feedLoading ? (
+                    <div className="flex flex-col justify-center items-center text-center py-12 text-white/30">
+                      <svg className="animate-spin h-5 w-5 mb-3 text-[#00f0ff]" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      <p className="text-[9px] tracking-widest uppercase">FETCHING DATA STREAMS...</p>
+                    </div>
+                  ) : feedItems.length === 0 ? (
+                    <div className="flex flex-col justify-center items-center text-center py-12 text-white/30">
+                      <span className="text-2xl mb-2">📡</span>
+                      <p className="text-[10px] tracking-widest uppercase">NO ACTIVE STREAMS DETECTED</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-1">
+                      {/* 📝 LATEST ARTICLES (note / blog) */}
+                      <div>
+                        <div className="text-[8px] text-[#00f0ff] tracking-wider uppercase mb-1.5 font-bold flex justify-between border-b border-white/5 pb-0.5">
+                          <span>[ LATEST ARTICLES ]</span>
+                          <span>MAX_5</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {feedItems.filter((item) => item.source !== "youtube").length === 0 ? (
+                            <p className="text-[8px] text-white/30 italic">NO ARTICLES FOUND</p>
+                          ) : (
+                            feedItems
+                              .filter((item) => item.source !== "youtube")
+                              .slice(0, 5)
+                              .map((item, idx) => {
+                                const sourceLabel = item.source === "hatena" ? "BLOG" : "NOTE";
+                                const sourceColor = item.source === "hatena" ? "#ff0055" : "#00f0ff";
+                                const formattedDate = new Date(item.date).toLocaleDateString("ja-JP", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit"
+                                });
+
+                                return (
+                                  <a 
+                                    key={idx} 
+                                    href={item.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onClick={() => playSynthSound("click", muted)}
+                                    className="group flex flex-col p-1.5 bg-white/3 border border-white/5 hover:border-white/15 hover:bg-white/5 transition-all rounded-xs no-underline"
+                                  >
+                                    <div className="flex justify-between items-center text-[7px] mb-0.5 font-mono">
+                                      <span className="px-1 py-0.2 rounded-xs font-bold text-[6px]" 
+                                            style={{ border: `1px solid ${sourceColor}`, color: sourceColor, background: `${sourceColor}10` }}>
+                                        {sourceLabel}
+                                      </span>
+                                      <span className="text-white/40">{formattedDate}</span>
+                                    </div>
+                                    <p className="text-[9px] text-white/80 leading-snug font-mono truncate group-hover:text-white transition-colors">
+                                      {item.title}
+                                    </p>
+                                  </a>
+                                );
+                              })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 📺 LATEST VIDEOS (youtube) */}
+                      <div>
+                        <div className="text-[8px] text-[#ef4444] tracking-wider uppercase mb-1.5 font-bold flex justify-between border-b border-white/5 pb-0.5">
+                          <span>[ LATEST VIDEOS ]</span>
+                          <span>MAX_2</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {feedItems.filter((item) => item.source === "youtube").length === 0 ? (
+                            <p className="text-[8px] text-white/30 italic">NO VIDEOS FOUND</p>
+                          ) : (
+                            feedItems
+                              .filter((item) => item.source === "youtube")
+                              .slice(0, 2)
+                              .map((item, idx) => {
+                                const sourceLabel = "YT_VIDEO";
+                                const sourceColor = "#ef4444";
+                                const formattedDate = new Date(item.date).toLocaleDateString("ja-JP", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit"
+                                });
+
+                                return (
+                                  <a 
+                                    key={idx} 
+                                    href={item.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onClick={() => playSynthSound("click", muted)}
+                                    className="group flex flex-col p-1.5 bg-white/3 border border-white/5 hover:border-white/15 hover:bg-white/5 transition-all rounded-xs no-underline"
+                                  >
+                                    <div className="flex justify-between items-center text-[7px] mb-0.5 font-mono">
+                                      <span className="px-1 py-0.2 rounded-xs font-bold text-[6px]" 
+                                            style={{ border: `1px solid ${sourceColor}`, color: sourceColor, background: `${sourceColor}10` }}>
+                                        {sourceLabel}
+                                      </span>
+                                      <span className="text-white/40">{formattedDate}</span>
+                                    </div>
+                                    <p className="text-[9px] text-white/80 leading-snug font-mono truncate group-hover:text-white transition-colors">
+                                      {item.title}
+                                    </p>
+                                  </a>
+                                );
+                              })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* パネルの底のグラフィック */}
             <div className="flex justify-between items-center text-[8px] text-white/20 mt-6 pt-2 border-t border-white/5 uppercase">
               <span>SYSTEM: ONLINE</span>
-              {hoveredLink && (
+              {hoveredLink ? (
                 <span style={{ color: hoveredLink.color }}>NODE_{hoveredLink.id.toUpperCase()}</span>
+              ) : (
+                <span>DATAFEED_ACTIVE</span>
               )}
             </div>
           </div>
